@@ -9,11 +9,11 @@ public class ConcertRequestDto {
 
 	private final Long userId;
 
-    private final String title;
+	private final String title;
 
-    private final String singer;
+	private final String singer;
 
-    private final String content;
+	private final String content;
 
-    private final Long ticketAmount;
+	private final Long ticketAmount;
 }

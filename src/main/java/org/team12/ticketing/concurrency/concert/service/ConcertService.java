@@ -35,19 +35,24 @@ public class ConcertService {
     }
 
     @Transactional
-    public ResponseEntity<String> buyTicket(Long concertId, ConcertRequestDto requestDto) {
+    public ConcertResponseDto buyTicket(Long concertId, ConcertRequestDto requestDto) {
         User user = userRepository.findById(requestDto.getUserId())
             .orElseThrow(() -> new RuntimeException("해당 유저가 존재하지 않습니다."));
 
         Concert concert = concertRepository.findById(concertId)
             .orElseThrow(() -> new RuntimeException("해당 콘서트가 존재하지 않습니다."));
 
+        //티켓 번호 저장 - 현재 남은 티켓 갯수 그대로 사용 (동시성 문제 발생)
+        Long ticketNumber = concert.getTicketAmount();
+
+        //현재 남은 티켓 갯수 - 1
         concert.decreaseTicketAmount();
         concertRepository.save(concert);
 
-        user.setTicketInfo(concert, user.getTicketNumbering() + 1);
+        //저장된 티켓 번호 유저에게 할당
+        user.setTicketInfo(concert, ticketNumber);
         userRepository.save(user);
 
-        return ResponseEntity.ok("티켓 예매 성공");
+        return ConcertResponseDto.of(concert);
     }
 }
