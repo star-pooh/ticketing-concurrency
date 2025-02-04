@@ -20,7 +20,7 @@ public class User {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "concert_id")
-    private Concert concertId;
+    private Concert concert;
 
     private Long ticketNumbering;
 
