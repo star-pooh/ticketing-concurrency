@@ -38,6 +38,13 @@ public class Concert {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    public Concert(String title, String singer, String content, Long ticketAmount) {
+        this.title = title;
+        this.singer = singer;
+        this.content = content;
+        this.ticketAmount = ticketAmount;
+    }
+
     public void update(ConcertRequestDto dto) {
         this.title = StringUtils.isBlank(dto.getTitle()) ? this.title : dto.getTitle();
         this.singer = StringUtils.isBlank(dto.getSinger()) ? this.singer : dto.getSinger();

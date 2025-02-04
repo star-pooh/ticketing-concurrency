@@ -20,6 +20,13 @@ public class ConcertService {
     private final UserRepository userRepository;
 
     @Transactional
+    public ConcertResponseDto createConcert(ConcertRequestDto dto) {
+        Concert concert = new Concert(dto.getTitle(), dto.getSinger(), dto.getContent(), dto.getTicketAmount());
+        Concert savedConcert = concertRepository.save(concert);
+        return ConcertResponseDto.of(savedConcert);
+    }
+
+    @Transactional
     public ConcertResponseDto updateConcert(Long concertId, ConcertRequestDto dto) {
         Concert foundedConcert = concertRepository.findById(concertId).orElseThrow(() -> new IllegalArgumentException("concert not found"));
         foundedConcert.update(dto);

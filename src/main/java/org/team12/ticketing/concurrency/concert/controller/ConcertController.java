@@ -15,6 +15,11 @@ public class ConcertController {
 
     private final ConcertService concertService;
 
+    @PostMapping
+    public ResponseEntity<ConcertResponseDto> createConcert(@RequestBody ConcertRequestDto dto) {
+        return ResponseEntity.ok(concertService.createConcert(dto));
+    }
+
     @GetMapping
     public ResponseEntity<ConcertResponseDto> findAllConcert() {
         return new ResponseEntity<>(null, HttpStatus.OK);
