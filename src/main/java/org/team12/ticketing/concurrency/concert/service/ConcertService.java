@@ -38,7 +38,7 @@ public class ConcertService {
         concert.decreaseTicketAmount();
         concertRepository.save(concert);
 
-        user.TicketInfo(concert, concert.getTicketAmount() + 1);
+        user.setTicketInfo(concert, user.getTicketNumbering() + 1);
         userRepository.save(user);
 
         return ResponseEntity.ok("티켓 예매 성공");

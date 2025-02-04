@@ -28,7 +28,7 @@ public class User {
         this.nickname = nickname;
     }
 
-    public void TicketInfo(Concert concertId, Long ticketNumbering) {
+    public void setTicketInfo(Concert concertId, Long ticketNumbering) {
         this.concert = concertId;
         this.ticketNumbering = ticketNumbering;
     }
