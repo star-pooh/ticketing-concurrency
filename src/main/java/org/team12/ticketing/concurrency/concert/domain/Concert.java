@@ -44,4 +44,12 @@ public class Concert {
         this.content = StringUtils.isBlank(dto.getContent()) ? this.content : dto.getContent();
         this.ticketAmount = Objects.isNull(dto.getTicketAmount()) ? this.ticketAmount : dto.getTicketAmount();
     }
+
+    public void decreaseTicketAmount() {
+        if (this.ticketAmount > 0) {
+            this.ticketAmount--;
+        } else {
+            throw new RuntimeException("티켓이 매진 되었습니다.");
+        }
+    }
 }
