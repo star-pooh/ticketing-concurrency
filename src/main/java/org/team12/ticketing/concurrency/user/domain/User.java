@@ -15,9 +15,16 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private String nickname;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "concert_id")
     private Concert concert_id;
 
     private Long ticket_numbering;
+
+    public User(String nickname) {
+        this.nickname = nickname;
+    }
 }
