@@ -27,8 +27,9 @@ public class ConcertController {
     }
 
     @PostMapping("/{concertId}")
-    public ResponseEntity<String> buyTicket(@PathVariable Long concertId, @RequestBody ConcertRequestDto dto) {
-        return concertService.buyTicket(concertId, dto);
+    public ResponseEntity<ConcertResponseDto> buyTicket(@PathVariable Long concertId, @RequestBody ConcertRequestDto dto) {
+        ConcertResponseDto response = concertService.buyTicket(concertId, dto);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{concertId}/{ticketId}")
