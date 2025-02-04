@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.team12.ticketing.concurrency.concert.dto.BuyTicketRequestDto;
 import org.team12.ticketing.concurrency.concert.dto.ConcertRequestDto;
 import org.team12.ticketing.concurrency.concert.dto.ConcertResponseDto;
 import org.team12.ticketing.concurrency.concert.service.ConcertService;
@@ -38,7 +39,7 @@ public class ConcertController {
     }
 
     @PostMapping("/{concertId}")
-    public ResponseEntity<ConcertResponseDto> buyTicket(@PathVariable Long concertId, @RequestBody ConcertRequestDto dto) {
+    public ResponseEntity<ConcertResponseDto> buyTicket(@PathVariable Long concertId, @RequestBody BuyTicketRequestDto dto) {
         ConcertResponseDto response = concertService.buyTicket(concertId, dto);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }

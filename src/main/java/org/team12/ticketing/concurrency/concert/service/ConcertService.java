@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
 import org.team12.ticketing.concurrency.concert.domain.Concert;
+import org.team12.ticketing.concurrency.concert.dto.BuyTicketRequestDto;
 import org.team12.ticketing.concurrency.concert.dto.ConcertRequestDto;
 import org.team12.ticketing.concurrency.concert.dto.ConcertResponseDto;
 import org.team12.ticketing.concurrency.concert.repository.ConcertRepository;
@@ -37,7 +38,7 @@ public class ConcertService {
     }
 
     @Transactional
-    public ConcertResponseDto buyTicket(Long concertId, ConcertRequestDto requestDto) {
+    public ConcertResponseDto buyTicket(Long concertId, BuyTicketRequestDto requestDto) {
         User user = userRepository.findById(requestDto.getUserId())
             .orElseThrow(() -> new RuntimeException("해당 유저가 존재하지 않습니다."));
 
