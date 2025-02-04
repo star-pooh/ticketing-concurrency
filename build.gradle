@@ -40,6 +40,16 @@ dependencies {
 
     // Data Faker
     implementation 'net.datafaker:datafaker:2.4.0'
+
+    // ENV
+    implementation 'me.paulschwarz:spring-dotenv:3.0.0'
+
+    // devtool
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // Health Checking
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
 }
 
 tasks.named('test') {
