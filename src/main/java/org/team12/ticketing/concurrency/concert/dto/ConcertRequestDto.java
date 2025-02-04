@@ -7,8 +7,6 @@ import lombok.Getter;
 @AllArgsConstructor
 public class ConcertRequestDto {
 
-	private final Long userId;
-
 	private final String title;
 
 	private final String singer;
