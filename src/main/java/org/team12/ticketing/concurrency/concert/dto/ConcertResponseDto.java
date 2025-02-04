@@ -37,7 +37,6 @@ public class ConcertResponseDto {
     }
 
     public static ConcertResponseDto of(User user) {
-        //
         return new ConcertResponseDto(
                 user.getConcert().getTitle(),
                 user.getConcert().getSinger(),
