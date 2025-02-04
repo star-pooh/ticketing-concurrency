@@ -27,4 +27,9 @@ public class User {
     public User(String nickname) {
         this.nickname = nickname;
     }
+
+    public void TicketInfo(Concert concertId, Long ticketNumbering) {
+        this.concert = concertId;
+        this.ticketNumbering = ticketNumbering;
+    }
 }
