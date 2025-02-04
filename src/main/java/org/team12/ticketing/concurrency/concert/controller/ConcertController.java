@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.team12.ticketing.concurrency.concert.dto.ConcertRequestDto;
 import org.team12.ticketing.concurrency.concert.dto.ConcertResponseDto;
 import org.team12.ticketing.concurrency.concert.service.ConcertService;
+import org.team12.ticketing.concurrency.user.service.UserService;
 
 @RestController
 @RequestMapping("/tickets/concert")
@@ -14,6 +15,7 @@ import org.team12.ticketing.concurrency.concert.service.ConcertService;
 public class ConcertController {
 
     private final ConcertService concertService;
+    private final UserService userService;
 
     @GetMapping
     public ResponseEntity<ConcertResponseDto> findAllConcert() {
@@ -22,8 +24,8 @@ public class ConcertController {
 
     @PatchMapping("/{concertId}")
     public ResponseEntity<ConcertResponseDto> updateConcert(@PathVariable Long concertId, @RequestBody ConcertRequestDto dto) {
-        ConcertResponseDto concertResponseDto = concertService.updateConcert(concertId, dto);
-        return new ResponseEntity<>(concertResponseDto, HttpStatus.OK);
+        ConcertResponseDto response = concertService.updateConcert(concertId, dto);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/{concertId}")
@@ -34,6 +36,7 @@ public class ConcertController {
 
     @GetMapping("/{concertId}/{ticketId}")
     public ResponseEntity<ConcertResponseDto> findTicket(@PathVariable Long concertId, @PathVariable Long ticketId) {
-        return new ResponseEntity<>(null, HttpStatus.OK);
+        ConcertResponseDto response = userService.findTicket(concertId, ticketId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
