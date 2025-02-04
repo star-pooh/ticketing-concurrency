@@ -1,9 +1,11 @@
 package org.team12.ticketing.concurrency.concert.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.team12.ticketing.concurrency.concert.domain.Concert;
 import org.team12.ticketing.concurrency.concert.dto.ConcertRequestDto;
@@ -54,5 +56,11 @@ public class ConcertService {
         userRepository.save(user);
 
         return ConcertResponseDto.of(concert);
+    }
+
+    public List<ConcertResponseDto> findAllConcerts() {
+        return concertRepository.findAll().stream()
+            .map(ConcertResponseDto::of)
+            .collect(Collectors.toList());
     }
 }

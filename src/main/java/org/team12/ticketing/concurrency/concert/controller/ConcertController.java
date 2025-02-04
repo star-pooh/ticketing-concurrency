@@ -1,5 +1,7 @@
 package org.team12.ticketing.concurrency.concert.controller;
 
+import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,8 +26,9 @@ public class ConcertController {
     }
 
     @GetMapping
-    public ResponseEntity<ConcertResponseDto> findAllConcert() {
-        return new ResponseEntity<>(null, HttpStatus.OK);
+    public ResponseEntity<List<ConcertResponseDto>> findAllConcerts() {
+        List<ConcertResponseDto> response = concertService.findAllConcerts();
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PatchMapping("/{concertId}")
