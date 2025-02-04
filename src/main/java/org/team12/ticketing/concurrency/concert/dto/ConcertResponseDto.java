@@ -1,5 +1,7 @@
 package org.team12.ticketing.concurrency.concert.dto;
 
+import java.time.LocalDateTime;
+
 import lombok.Getter;
 import org.team12.ticketing.concurrency.concert.domain.Concert;
 import org.team12.ticketing.concurrency.user.domain.User;
@@ -18,12 +20,15 @@ public class ConcertResponseDto {
 
     private final UserResponseDto user;
 
-    private ConcertResponseDto(String title, String singer, String content, Long ticketAmount, UserResponseDto user) {
+    private final LocalDateTime createdAt;
+
+    private ConcertResponseDto(String title, String singer, String content, Long ticketAmount, UserResponseDto user, LocalDateTime createdAt) {
         this.title = title;
         this.singer = singer;
         this.content = content;
         this.ticketAmount = ticketAmount;
         this.user = user;
+        this.createdAt = createdAt;
     }
 
     public static ConcertResponseDto of(Concert concert) {
@@ -32,8 +37,9 @@ public class ConcertResponseDto {
                 concert.getSinger(),
                 concert.getContent(),
                 concert.getTicketAmount(),
-                null
-        );
+                null,
+                concert.getCreatedAt()
+            );
     }
 
     public static ConcertResponseDto of(User user) {
@@ -42,7 +48,8 @@ public class ConcertResponseDto {
                 user.getConcert().getSinger(),
                 user.getConcert().getContent(),
                 user.getConcert().getTicketAmount(),
-                UserResponseDto.of(user)
+                UserResponseDto.of(user),
+                user.getConcert().getCreatedAt()
         );
     }
 }

@@ -19,7 +19,8 @@ public class ConcertController {
 
     @PostMapping
     public ResponseEntity<ConcertResponseDto> createConcert(@RequestBody ConcertRequestDto dto) {
-        return ResponseEntity.ok(concertService.createConcert(dto));
+        ConcertResponseDto response = concertService.createConcert(dto);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping
