@@ -12,13 +12,13 @@ import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.List;
 
-@Component
+//@Component
 @RequiredArgsConstructor
 public class InitData {
 
     private final JdbcTemplate jdbcTemplate;
 
-    @PostConstruct
+//    @PostConstruct
     @Transactional
     public void init() {
 
