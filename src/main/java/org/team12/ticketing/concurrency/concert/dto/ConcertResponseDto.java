@@ -21,7 +21,7 @@ public class ConcertResponseDto {
 
 	private final Long ticketAmount;
 
-    private final LocalDateTime createdAt;
+	private final LocalDateTime createdAt;
 
 	private final UserResponseDto user;
 
@@ -31,7 +31,7 @@ public class ConcertResponseDto {
 			concert.getSinger(),
 			concert.getContent(),
 			concert.getTicketAmount(),
-            concert.getCreatedAt(),
+			concert.getCreatedAt(),
 			null
 		);
 	}
@@ -42,7 +42,7 @@ public class ConcertResponseDto {
 			user.getConcert().getSinger(),
 			user.getConcert().getContent(),
 			user.getConcert().getTicketAmount(),
-            user.getConcert().getCreatedAt(),
+			user.getConcert().getCreatedAt(),
 			UserResponseDto.of(user)
 		);
 	}
