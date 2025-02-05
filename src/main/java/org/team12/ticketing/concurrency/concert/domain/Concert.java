@@ -4,13 +4,11 @@ import io.micrometer.common.util.StringUtils;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import org.team12.ticketing.concurrency.concert.dto.ConcertRequestDto;
+import org.team12.ticketing.concurrency.concert.dto.ConcertUpdateRequestDto;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 @Entity
 @Table(name = "concert")
@@ -19,45 +17,48 @@ import java.util.Objects;
 @EntityListeners(AuditingEntityListener.class)
 public class Concert {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	@Column(nullable = false)
-	private String title;
+    @Column(nullable = false)
+    private String title;
 
-	@Column(nullable = false)
-	private String singer;
+    @Column(nullable = false)
+    private String singer;
 
-	@Column(nullable = false)
-	private String content;
+    @Column(nullable = false)
+    private String content;
 
-	@Column(nullable = false)
-	private Long ticketAmount;
+    @Column(nullable = false)
+    private Long totalTicketAmount;
 
-	@CreatedDate
-	@Column(updatable = false)
-	private LocalDateTime createdAt;
+    @Column(nullable = false)
+    private Long remainTicketAmount;
 
-	public Concert(String title, String singer, String content, Long ticketAmount) {
-		this.title = title;
-		this.singer = singer;
-		this.content = content;
-		this.ticketAmount = ticketAmount;
-	}
+    @CreatedDate
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
-	public void update(ConcertRequestDto dto) {
-		this.title = StringUtils.isBlank(dto.getTitle()) ? this.title : dto.getTitle();
-		this.singer = StringUtils.isBlank(dto.getSinger()) ? this.singer : dto.getSinger();
-		this.content = StringUtils.isBlank(dto.getContent()) ? this.content : dto.getContent();
-		this.ticketAmount = Objects.isNull(dto.getTicketAmount()) ? this.ticketAmount : dto.getTicketAmount();
-	}
+    public Concert(String title, String singer, String content, Long totalTicketAmount) {
+        this.title = title;
+        this.singer = singer;
+        this.content = content;
+        this.totalTicketAmount = totalTicketAmount;
+        this.remainTicketAmount = totalTicketAmount;
+    }
 
-	public void decreaseTicketAmount() {
-		if (this.ticketAmount > 0) {
-			this.ticketAmount--;
-		} else {
-			throw new RuntimeException("티켓이 매진 되었습니다.");
-		}
-	}
+    public void update(ConcertUpdateRequestDto dto) {
+        this.title = StringUtils.isBlank(dto.getTitle()) ? this.title : dto.getTitle();
+        this.singer = StringUtils.isBlank(dto.getSinger()) ? this.singer : dto.getSinger();
+        this.content = StringUtils.isBlank(dto.getContent()) ? this.content : dto.getContent();
+    }
+
+    public void decreaseRemainTicketAmount() {
+        if (this.remainTicketAmount <= 0) {
+            throw new RuntimeException("티켓이 매진 되었습니다.");
+        }
+
+        this.remainTicketAmount--;
+    }
 }

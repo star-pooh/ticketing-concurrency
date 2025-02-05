@@ -5,7 +5,11 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class BuyTicketRequestDto {
+public class ConcertUpdateRequestDto {
 
-	private final Long userId;
+    private final String title;
+
+    private final String singer;
+
+    private final String content;
 }
