@@ -1,9 +1,12 @@
 package org.team12.ticketing.concurrency.concert.controller;
 
+import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.team12.ticketing.concurrency.concert.dto.BuyTicketRequestDto;
 import org.team12.ticketing.concurrency.concert.dto.ConcertRequestDto;
 import org.team12.ticketing.concurrency.concert.dto.ConcertResponseDto;
 import org.team12.ticketing.concurrency.concert.service.ConcertService;
@@ -17,9 +20,16 @@ public class ConcertController {
     private final ConcertService concertService;
     private final UserService userService;
 
+    @PostMapping
+    public ResponseEntity<ConcertResponseDto> createConcert(@RequestBody ConcertRequestDto dto) {
+        ConcertResponseDto response = concertService.createConcert(dto);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
     @GetMapping
-    public ResponseEntity<ConcertResponseDto> findAllConcert() {
-        return new ResponseEntity<>(null, HttpStatus.OK);
+    public ResponseEntity<List<ConcertResponseDto>> findAllConcerts() {
+        List<ConcertResponseDto> response = concertService.findAllConcerts();
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PatchMapping("/{concertId}")
@@ -29,7 +39,7 @@ public class ConcertController {
     }
 
     @PostMapping("/{concertId}")
-    public ResponseEntity<ConcertResponseDto> buyTicket(@PathVariable Long concertId, @RequestBody ConcertRequestDto dto) {
+    public ResponseEntity<ConcertResponseDto> buyTicket(@PathVariable Long concertId, @RequestBody BuyTicketRequestDto dto) {
         ConcertResponseDto response = concertService.buyTicket(concertId, dto);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }

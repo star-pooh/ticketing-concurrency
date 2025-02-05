@@ -1,11 +1,14 @@
 package org.team12.ticketing.concurrency.concert.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.team12.ticketing.concurrency.concert.domain.Concert;
+import org.team12.ticketing.concurrency.concert.dto.BuyTicketRequestDto;
 import org.team12.ticketing.concurrency.concert.dto.ConcertRequestDto;
 import org.team12.ticketing.concurrency.concert.dto.ConcertResponseDto;
 import org.team12.ticketing.concurrency.concert.repository.ConcertRepository;
@@ -20,6 +23,13 @@ public class ConcertService {
     private final UserRepository userRepository;
 
     @Transactional
+    public ConcertResponseDto createConcert(ConcertRequestDto dto) {
+        Concert concert = new Concert(dto.getTitle(), dto.getSinger(), dto.getContent(), dto.getTicketAmount());
+        Concert savedConcert = concertRepository.save(concert);
+        return ConcertResponseDto.of(savedConcert);
+    }
+
+    @Transactional
     public ConcertResponseDto updateConcert(Long concertId, ConcertRequestDto dto) {
         Concert foundedConcert = concertRepository.findById(concertId).orElseThrow(() -> new IllegalArgumentException("concert not found"));
         foundedConcert.update(dto);
@@ -28,7 +38,7 @@ public class ConcertService {
     }
 
     @Transactional
-    public ConcertResponseDto buyTicket(Long concertId, ConcertRequestDto requestDto) {
+    public ConcertResponseDto buyTicket(Long concertId, BuyTicketRequestDto requestDto) {
         User user = userRepository.findById(requestDto.getUserId())
             .orElseThrow(() -> new RuntimeException("해당 유저가 존재하지 않습니다."));
 
@@ -47,5 +57,11 @@ public class ConcertService {
         userRepository.save(user);
 
         return ConcertResponseDto.of(concert);
+    }
+
+    public List<ConcertResponseDto> findAllConcerts() {
+        return concertRepository.findAll().stream()
+            .map(ConcertResponseDto::of)
+            .collect(Collectors.toList());
     }
 }
