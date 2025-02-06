@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.team12.ticketing.concurrency.booking.dto.BookingRequestDto;
-import org.team12.ticketing.concurrency.booking.service.BookingService;
+import org.team12.ticketing.concurrency.booking.service.BookingSynchronizedService;
 import org.team12.ticketing.concurrency.concert.domain.Concert;
 import org.team12.ticketing.concurrency.concert.repository.ConcertRepository;
 
@@ -18,12 +18,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ThreadConcurrencyTest {
 
     @Autowired
-    private BookingService bookingService;
-
-    @Autowired
     private ConcertRepository concertRepository;
 
-    private static final int THREAD_COUNT = 50; // 동시 요청 개수
+    @Autowired
+    private BookingSynchronizedService bookingSynchronizedService;
+
+    private static final int THREAD_COUNT = 100; // 동시 요청 개수
     private static final long TEST_CONCERT_ID = 1L; // 테스트 콘서트 ID
 
 
@@ -51,7 +51,7 @@ public class ThreadConcurrencyTest {
             executorService.submit(() -> {
                 try {
                     cyclicBarrier.await(); // 모든 스레드가 준비될 때까지 준비
-                    bookingService.bookTicket(TEST_CONCERT_ID, new BookingRequestDto(userId));
+                    bookingSynchronizedService.synchronizedBookTicket(TEST_CONCERT_ID, new BookingRequestDto(userId));
                 } catch (Exception e) {
                     // 실패한 요청은 무시
                     System.out.println(userId + " / " + e.getMessage());

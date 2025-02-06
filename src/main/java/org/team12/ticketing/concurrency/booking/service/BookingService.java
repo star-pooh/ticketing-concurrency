@@ -1,5 +1,6 @@
 package org.team12.ticketing.concurrency.booking.service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.team12.ticketing.concurrency.booking.domain.Booking;
@@ -19,12 +20,12 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final ConcertRepository concertRepository;
 
-    public synchronized BookingResponseDto bookTicket(Long concertId, BookingRequestDto dto) {
+    @Transactional
+    public BookingResponseDto bookTicket(Long concertId, BookingRequestDto dto) {
         Concert concert = concertRepository.findById(concertId)
                 .orElseThrow(() -> new IllegalArgumentException("Concert not found"));
 
         concert.decreaseRemainTicketAmount();
-        concertRepository.save(concert);
 
         Booking booking = Booking.builder()
                 .concert(concert)
