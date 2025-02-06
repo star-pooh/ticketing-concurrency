@@ -9,4 +9,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class BookingRequestDto {
     private Long userId;
+    private Long concertId;
 }

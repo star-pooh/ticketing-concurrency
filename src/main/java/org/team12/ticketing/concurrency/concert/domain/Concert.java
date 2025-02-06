@@ -2,6 +2,7 @@ package org.team12.ticketing.concurrency.concert.domain;
 
 import io.micrometer.common.util.StringUtils;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -40,6 +41,10 @@ public class Concert {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    @Version
+    private Long version;
+
+    @Builder
     public Concert(String title, String singer, String content, Long totalTicketAmount) {
         this.title = title;
         this.singer = singer;
