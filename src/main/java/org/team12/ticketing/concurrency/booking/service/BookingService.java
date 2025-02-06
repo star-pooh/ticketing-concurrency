@@ -1,8 +1,13 @@
 package org.team12.ticketing.concurrency.booking.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.team12.ticketing.concurrency.aop.RedissonLock;
+import org.team12.ticketing.concurrency.aop.RedissonLockParam;
 import org.team12.ticketing.concurrency.booking.domain.Booking;
 import org.team12.ticketing.concurrency.booking.dto.BookingRequestDto;
 import org.team12.ticketing.concurrency.booking.dto.BookingResponseDto;
@@ -11,13 +16,16 @@ import org.team12.ticketing.concurrency.concert.domain.Concert;
 import org.team12.ticketing.concurrency.concert.repository.ConcertRepository;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BookingService {
     private final BookingRepository bookingRepository;
     private final ConcertRepository concertRepository;
+    private final RedissonClient redissonClient;
 
     @Transactional
     public BookingResponseDto bookTicket(Long concertId, BookingRequestDto dto) {
@@ -48,5 +56,28 @@ public class BookingService {
                         .bookingOrder(booking.getBookingOrder())
                         .build())
                 .toList();
+    }
+
+
+
+    @RedissonLock
+    @Transactional
+    public BookingResponseDto bookWithRedissonLock(@RedissonLockParam Long concertId, BookingRequestDto bookingReqDto) {
+        Concert concert = concertRepository.findById(concertId)
+                .orElseThrow(() -> new IllegalArgumentException("Concert not found"));
+
+        concert.decreaseRemainTicketAmount();
+
+        Booking booking = Booking.builder()
+                .concert(concert)
+                .userId(bookingReqDto.getUserId())
+                .build();
+
+        Booking savedBooking = bookingRepository.save(booking);
+
+        return BookingResponseDto.builder()
+                .concertId(savedBooking.getConcert().getId())
+                .bookingOrder(savedBooking.getBookingOrder())
+                .build();
     }
 }

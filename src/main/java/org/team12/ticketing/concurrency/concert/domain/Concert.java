@@ -4,12 +4,14 @@ import io.micrometer.common.util.StringUtils;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.team12.ticketing.concurrency.concert.dto.ConcertUpdateRequestDto;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Entity
 @Table(name = "concert")
 @Getter
@@ -55,10 +57,11 @@ public class Concert {
     }
 
     public void decreaseRemainTicketAmount() {
+        log.info("현재 남은 티켓 수: {}", this.remainTicketAmount);
         if (this.remainTicketAmount <= 0) {
             throw new RuntimeException("티켓이 매진 되었습니다.");
         }
-
         this.remainTicketAmount--;
+        log.info("감소 후 남은 티켓 수: {}", this.remainTicketAmount);
     }
 }
