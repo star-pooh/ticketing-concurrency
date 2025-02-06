@@ -41,8 +41,8 @@ public class Concert {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
-    @Version
-    private Long version;
+    // @Version
+    // private Long version;
 
     @Builder
     public Concert(String title, String singer, String content, Long totalTicketAmount) {

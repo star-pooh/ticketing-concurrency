@@ -124,6 +124,7 @@ public class BookingServiceConcurrencyTest {
 					barrier.await();
 					BookingRequestDto request = new BookingRequestDto(userId, TEST_CONCERT_ID);
 					optimisticLockBookingService.tryBookingWithRetry(request);
+					//bookingService.bookTicketWithOptimisticLock(request);
 					successCount.incrementAndGet();
 				} catch (Exception e) {
 				} finally {
