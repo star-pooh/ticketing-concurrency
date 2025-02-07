@@ -24,6 +24,15 @@
 
 ---
 
+### 맡은 역할
+
+- 문규민 : Redis - Redisson 
+- 박준호 : Redis - Lettuce
+- 조민재 : DB - 낙관적 / 비관적 Lock
+- 홍은기 : Thread - Synchronized
+
+---
+
 ### 동시성 문제 해결 방법
 
 <details>
@@ -673,3 +682,106 @@ public BookingResponseDto bookWithRedissonLock(@RedissonLockParam Long concertId
     
 </details>
 
+---
+
+### 부하 테스트
+
+📢 20장의 콘서트 티켓에 100명이 요청을 보낸 경우
+
+<details>
+<summary>synchronized</summary>
+
+![Image](https://github.com/user-attachments/assets/e49e6923-d84b-4abe-a1a5-082eded07bc8)
+
+</details>
+
+<details>
+<summary>synchronized + transaction</summary>
+
+![Image](https://github.com/user-attachments/assets/9f40041a-306f-49b1-ac36-35ef4ec304cf)
+
+</details>
+
+<details>
+<summary>optimistic lock</summary>
+
+```
+int maxRetries = 3;
+long backoffMillis = 100;
+backoffMillis * (long)Math.*pow*(2, attempt - 1)
+```
+
+![Image](https://github.com/user-attachments/assets/6e3fc492-615f-4974-96ba-4616c3f5bd81)
+
+</details>
+
+<details>
+<summary>pessimistic lock</summary>
+
+![Image](https://github.com/user-attachments/assets/c95c12c6-852c-4022-9712-0862c5791b0b)
+
+</details>
+
+<details>
+<summary>lettuce(retry)</summary>
+
+```
+private static final int *RETRY_COUNT* = 100;
+private static final long *RETRY_DELAY_MILLIS* = 200;
+TimeUnit.*MILLISECONDS*.sleep(*RETRY_DELAY_MILLIS*);
+```
+
+![Image](https://github.com/user-attachments/assets/93d4c527-97dd-4bf0-ab61-3f59a0a399bd)
+
+</details>
+
+<details>
+<summary>lettuce(backoffMillis)</summary>
+
+```
+while (!lockRedisRepository.acquireLock(lockKey, Duration.ofMillis(30000))) {
+    try {
+        Thread.sleep(100); //100ms
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new IllegalStateException("예매 프로세스가 중단되었습니다.", e);
+    }
+}
+```
+
+![Image](https://github.com/user-attachments/assets/5de1bda3-cace-4d8a-9d7e-42732fa9042a)
+
+</details>
+
+<details>
+<summary>redisson</summary>
+
+![Image](https://github.com/user-attachments/assets/a88bb723-feb7-4a46-ae12-63df1f204098)
+
+</details>
+
+
+![Image](https://github.com/user-attachments/assets/cb006da8-464f-410a-87f0-806bc1691cb0)
+
+---
+
+### KPT
+
+- Keep
+  - 동시성이라는 키워드에 집중해서 학습해 볼 수 있어서 좋았다. 앞으로도 어떤 주제를 깊게 학습할 때 이번에 겪었던 내용들(문제점이나 개선점을 찾는 것들)이 많은 도움이 될 것 같다.
+  - 팀원들끼리 미니 세션도 진행하고 활발하게 질문을 하면서 내 것만 하는게 아닌 팀 전체가 같이 움직이는게 좋았다. 
+- Problem
+  - 시간 분배에 조금 모자라서 부하 테스트를 시간 안에 끝내지 못했던 것이 아쉬웠다.
+  - 우리가 가정한 콘서트 티켓 판매라는 상황에서는 어떤 방법이 제일 좋을 것 같은지 결론을 내지 않은 점이 아쉬웠다.
+- Try
+  - 어떤 케이스에서 어떤 방법을 사용하면 좋은지에 대한 비교 분석이 추가되면 좋을 것 같다.
+  - 앞으로 이런 학습을 할 기회가 있다면 상황을 가정하고 가설을 세워서 검증까지 진행하면 조금 더 밀도 있는 학습이 될 것 같다.
+---
+
+### 추가로 학습해 볼 수 있는 내용
+
+- 스레드 레벨에서 non-blocking 방법인 atomic으로 동시성 제어해보기
+  - blocking 방법인 synchronized로 해봤으니 비교 대상으로 진행하면 좋을 것 같다.
+- Redis 레벨에서 redlock으로 동시성 제어해보
+  - 많은 자료에서 redlock에 대해 언급 되었는데 이번에 다루지 못해서 아쉽기 때문이다.
+---
