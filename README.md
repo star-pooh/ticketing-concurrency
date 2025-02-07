@@ -251,7 +251,7 @@ Lock을 걸지 않으면 발생하는 동시성 문제.
 
 
 - 낙관적 락에서의 교착상태(Dead-Lock) 발생
-낙관적 락(Optimistic Lock)은 분명 명시적으로 DB의 Lock을 사용하지 않고, 버전 관리 기능을 사용한다. 그런데도 데드락이 발생할 수 있다.</br>
+낙관적 락(Optimistic Lock)은 분명 명시적으로 DB의 Lock을 사용하지 않고, 버전 관리 기능을 사용한다. 이때 Lost Update문제는 해결 될 수 있으나 데드락이 발생할 수 있다.</br>
 그렇다는 것은 Lock을 사용하고 있다는 뜻인데, 낙관적 락(DB Lock 사용 x)을 사용했을 뿐 명시적으로 DB Lock을 사용하지 않았다. 근데 왜 Lock이 사용됐을까?</br>
 
 [MySQL 5.6 레퍼런스](https://dev.mysql.com/doc/refman/8.4/en/innodb-locks-set.html)   
