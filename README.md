@@ -653,10 +653,11 @@ public BookingResponseDto bookWithRedissonLock(@RedissonLockParam Long concertId
 
 </details>
 
-비교 </br>
-1000개 요청
-<img width="844" alt="image" src="https://github.com/user-attachments/assets/559eaf25-5efe-4666-8584-5335d79c37be" />
-10개 요청
+비교
+
+1000개 요청</br>
+<img width="844" alt="image" src="https://github.com/user-attachments/assets/559eaf25-5efe-4666-8584-5335d79c37be" /></br>
+10개 요청</br>
 <img width="847" alt="image" src="https://github.com/user-attachments/assets/67ce81c8-110f-46d9-847d-92039ebcf696" />
 
 </details>
