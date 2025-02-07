@@ -446,7 +446,7 @@ Redis 등 DB 밖에서 락을 걸 수 있는 기술을 사용할 수 있다.
       스레드 8개 실행
       원하는 결과: 4개까지 티켓 예매 후 나머지 예매 실패, 중복되지 않는 티켓 예매 등수
 
-<img width="851" alt="image" src="https://github.com/user-attachments/assets/de206bcc-94de-4535-86e1-350d3c83e628" />
+<img width="851" alt="image" src="https://github.com/user-attachments/assets/de206bcc-94de-4535-86e1-350d3c83e628" /></br>
 userId = 3 이 먼저 락 획득 성공</br>
 남은 티켓 수 감소 후 락 해제 </br>
 </br>
