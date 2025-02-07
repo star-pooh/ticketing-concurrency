@@ -20,11 +20,12 @@ import org.team12.ticketing.concurrency.booking.service.BookingService;
 import org.team12.ticketing.concurrency.concert.domain.Concert;
 import org.team12.ticketing.concurrency.concert.repository.ConcertRepository;
 
+//유저가 티켓을 구매하는 방식의 동시성 테스트
 @SpringBootTest
 public class RedisLockTest {
 
-    private static final int THREAD_COUNT = 5;  // 동시 요청 스레드 수
-    private static final int EXPECTED_MAX_SUCCESS_COUNT = 10; // 초기 티켓 수(예: 100장)
+    private static final int THREAD_COUNT = 100;  // 동시 요청 스레드 수
+    private static final int EXPECTED_MAX_SUCCESS_COUNT = 100; // 초기 티켓 수(예: 50장)
 
     @Autowired
     private BookingService bookingService;
@@ -38,7 +39,7 @@ public class RedisLockTest {
     public void setupConcertData() {
         // 테스트 전에 콘서트 데이터를 생성합니다.
         // 총 티켓 수와 남은 티켓 수를 동일하게 100으로 설정 (예: 100장 판매)
-        Concert concert = new Concert("Test Concert", "Test Singer", "Test Content", 10L);
+        Concert concert = new Concert("Test Concert", "Test Singer", "Test Content", 100L);
         Concert savedConcert = concertRepository.save(concert);
         concertId = savedConcert.getId();
     }
@@ -75,7 +76,7 @@ public class RedisLockTest {
             }
         }
 
-        // 동시성 테스트에서는, 초기 티켓 수(100장)를 초과하여 판매되면 안 됩니다.
+        // 동시성 테스트에서는, 초기 티켓 수를 초과하여 판매되면 안 됩니다.
         assertTrue(successCount <= EXPECTED_MAX_SUCCESS_COUNT,
             "Booking success count exceeds expected limit. Success count: " + successCount);
     }

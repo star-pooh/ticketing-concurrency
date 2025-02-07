@@ -28,13 +28,11 @@ public class BookingService {
     private final RedisRockRepository redisRockRepository;
 
 
-    // 최상위 메소드 (book) (bookTicket 호출)
-
     public BookingResponseDto bookingTicket(Long concertId, BookingRequestDto dto) {
         String lockValue = UUID.randomUUID().toString();
         log.info("Attempting to acquire Redis lock with value: {}", lockValue);
 
-        int retryCount = 10;
+        int retryCount = 100;
         long retryDelayMillis = 200;
         boolean acquired = false;
 
@@ -52,7 +50,7 @@ public class BookingService {
             try {
                 log.info("Lock not acquired on attempt {}. Retrying in {} ms", i + 1, retryDelayMillis);
                 log.info("user id: {}", dto.getUserId());
-                TimeUnit.MILLISECONDS.sleep(retryDelayMillis * (long)Math.pow(2, i - 1));
+                TimeUnit.MILLISECONDS.sleep(retryDelayMillis);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.error("Interrupted during lock retry", e);
