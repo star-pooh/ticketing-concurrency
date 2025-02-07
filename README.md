@@ -355,92 +355,309 @@ Redis 등 DB 밖에서 락을 걸 수 있는 기술을 사용할 수 있다.
 <summary>Redis</summary>
 
 <details>
-<summary>Lettuce</summary>
-Redis 레벨에서 lettues를 사용하여 동시성 문제를 해결하고자 하고자 했다.
-구현방법, 동시성 제어 방법 적용 전/후 결과, 해당 내용이 가질 수 있는 문제점 등에 대해 다룹니다.
-
------------------------------------------
-<details>
-<summary>Redis의 동시성</summary>
-<div markdown="1">
-
-Redis는 동시성 문제 해결을 위한 분산 락, 캐시 등으로 높은 동시 접속 및 빠른 응답이 필요한 환경에서 주로 쓰인다. Lettuce는 Java 애플리케이션에서 안전하게 스레드를 보호하며 비동기나 반응형 api를 지원해준다.
-
-</div>
-</details>
-
-📢 테스트 : 100명이 동시에 100개의 티켓을 예매하기
-
-![Image](https://github.com/user-attachments/assets/f5738115-7127-40f6-a291-68176bc71b9b)
-
-100명의 유저 = 동시 요청 스레드 수
-초기 티켓 수 100장
-
-![Image](https://github.com/user-attachments/assets/7e65a07b-3072-4117-9592-0bda0b2f8de1)
-
-결과가 64에서 끊기는 모습을 확인할 수 있다. 하여 콘솔에 로그에서 상태를 확인하고자 했다.
-
-![Image](https://github.com/user-attachments/assets/6e711326-ba0a-463f-9268-97fa62651145)
-
-무언가가 롤백이 된 것을 볼 수 있었다.
-
-![Image](https://github.com/user-attachments/assets/d132f75e-eaab-46a4-a76b-f3e151f6c233)
-
-그리고 롤백이 되기 이전의 로그에서 재시도 요청이 실패하는 과정이 로그에 보이는데. 
-이 로그 이후 롤백이 발생하는 것이 한 군데만 있지는 않았다는 점이다.
-
-![Image](https://github.com/user-attachments/assets/48afb861-d22a-403d-b4d5-03e279630b85)
-
-이전의 로그는 콘솔의 맨 아래에서 확인했다면 이 로그의 스크롤 바가 상단에 위치해있음이 눈에 보인다.
-
-또한, 같은 커넥션의 숫자가 롤백되었단 것이며, 일정 재시도 숫자까지 락을 얻는 것을 실패한 이후란 것이다.
-
-![Image](https://github.com/user-attachments/assets/9bcd70a3-501e-4a8b-aba9-89bf71b0d7b6)
-
-어느 한 쪽이 실패했을 때, 롤백이 되는 현상. 우린 그것을 db레벨에서 움직이는 트랜잭셔널에서 이미 본 적이 있었다.
-
-![Image](https://github.com/user-attachments/assets/2d25a4e1-0676-4068-b4c1-f2c6ae97c7a3)
-
-물론 ttl을 충분히 길게 잡아준다거나, 재시도 횟수를 늘려준다면 아예 모두 성공을 해버려 그러한 상황이 일어나지 않겠지만...
-항상 그런 상황이 보장되리란 법은 없다.
-
-그렇다면 트랜잭셔널을 서비스 딴에서 걸었다고 왜 이러한 상황이 된 것이냐?
-
-두 가지 가능성을 떠올렸다.
-
-1. Redis 락과 트랜잭션 충돌
-   Redis 락을 획득하는 부분과 트랜잭션을 사용하는 부분이 충돌하면서, 특정 스레드가 락을 얻었지만 이후 트랜잭션 롤백이 발생하며 정상적인 예약 처리가 이루어지지 않았을 가능성이 크다.
-   Spring의 @Transactional 어노테이션을 사용하면 예외가 발생하면 자동으로 롤백되므로, Redis 락을 해제하기 전에 예외가 발생하면 락이 풀리지 않고 다른 스레드가 계속해서 대기한다.
-
-
-2. 재시도 전략과 트랜잭션이 동시에 동작하면서 충돌
-   Lettuce 기반의 재시도 전략을 사용했지만, 트랜잭션 내부에서 락을 획득하면 롤백될 경우 락도 함께 해제될 수 있다.
-   그러나 Redis 락을 관리하는 코드가 트랜잭션 외부에 있다면, 롤백과는 별개로 락이 해제되지 않아서 Deadlock이 발생할 수 있다.
-
-우연히 레디스 락을 관리하는 코드는 다른 클래스로 따로 빼낸 상태에서 호출하는 형식이었다.
-
-결국, DB 트랜잭션과 Redis 락 간 문제가 발생했다고 보여지며,
-Spring의 트랜잭션은 기본적으로 DB에 대한 롤백을 수행하지만, Redis 락은 별도의 외부시스템이므로
-결과만을 롤백될 뿐, 레디스쪽에서 이에 대해 특별한 조치를 취하진 않는다.
-
-
-그래서 롤백 로그만 뜰 뿐이며 결국 같은 조건 하에 db에 들어가는 값은 똑같은 경우가 있지 않냐는 궁금증이 생길만도 하다.
-트랜잭셔널을 제거한 이후 시도한 결과도 ttl와 재시도 횟수, 재시도를 기다리는 시간에 의해 같은 결과는 내긴 했지만...
-
-여기선 발생하진 않았지만 이미 예매에 성공한 유저의 티켓까지 트랜잭셔널에 묶여서
-로그상으로는 예매에 성공했으나, db에는 남지않는 결과를 예상할 수도 있다.
-
-이는 외부 시스템이 트랜잭션 커밋 후의 결과를 기반으로 동작한다면, 롤백이 발생할 경우 외부시스템과의 데이터 불일치가 발생할 수 있다는 뜻이다.
-
-![Image](https://github.com/user-attachments/assets/8a9b7a00-46ea-405e-99d7-2663acf85ab6)
-
-마지막으로 성공한 사진을 올리며 마치겠다.
-
-</details>
-
+   <summary>Lettuce</summary>
+   Redis 레벨에서 lettues를 사용하여 동시성 문제를 해결하고자 하고자 했다.
+   구현방법, 동시성 제어 방법 적용 전/후 결과, 해당 내용이 가질 수 있는 문제점 등에 대해 다룹니다.
+   
+   -----------------------------------------
+   <details>
+   <summary>Redis의 동시성</summary>
+   <div markdown="1">
+   
+   Redis는 동시성 문제 해결을 위한 분산 락, 캐시 등으로 높은 동시 접속 및 빠른 응답이 필요한 환경에서 주로 쓰인다. Lettuce는 Java 애플리케이션에서 안전하게 스레드를 보호하며 비동기나 반응형 api를 지원해준다.
+   
+   </div>
+   </details>
+   
+   📢 테스트 : 100명이 동시에 100개의 티켓을 예매하기
+   
+   ![Image](https://github.com/user-attachments/assets/f5738115-7127-40f6-a291-68176bc71b9b)
+   
+   100명의 유저 = 동시 요청 스레드 수
+   초기 티켓 수 100장
+   
+   ![Image](https://github.com/user-attachments/assets/7e65a07b-3072-4117-9592-0bda0b2f8de1)
+   
+   결과가 64에서 끊기는 모습을 확인할 수 있다. 하여 콘솔에 로그에서 상태를 확인하고자 했다.
+   
+   ![Image](https://github.com/user-attachments/assets/6e711326-ba0a-463f-9268-97fa62651145)
+   
+   무언가가 롤백이 된 것을 볼 수 있었다.
+   
+   ![Image](https://github.com/user-attachments/assets/d132f75e-eaab-46a4-a76b-f3e151f6c233)
+   
+   그리고 롤백이 되기 이전의 로그에서 재시도 요청이 실패하는 과정이 로그에 보이는데. 
+   이 로그 이후 롤백이 발생하는 것이 한 군데만 있지는 않았다는 점이다.
+   
+   ![Image](https://github.com/user-attachments/assets/48afb861-d22a-403d-b4d5-03e279630b85)
+   
+   이전의 로그는 콘솔의 맨 아래에서 확인했다면 이 로그의 스크롤 바가 상단에 위치해있음이 눈에 보인다.
+   
+   또한, 같은 커넥션의 숫자가 롤백되었단 것이며, 일정 재시도 숫자까지 락을 얻는 것을 실패한 이후란 것이다.
+   
+   ![Image](https://github.com/user-attachments/assets/9bcd70a3-501e-4a8b-aba9-89bf71b0d7b6)
+   
+   어느 한 쪽이 실패했을 때, 롤백이 되는 현상. 우린 그것을 db레벨에서 움직이는 트랜잭셔널에서 이미 본 적이 있었다.
+   
+   ![Image](https://github.com/user-attachments/assets/2d25a4e1-0676-4068-b4c1-f2c6ae97c7a3)
+   
+   물론 ttl을 충분히 길게 잡아준다거나, 재시도 횟수를 늘려준다면 아예 모두 성공을 해버려 그러한 상황이 일어나지 않겠지만...
+   항상 그런 상황이 보장되리란 법은 없다.
+   
+   그렇다면 트랜잭셔널을 서비스 딴에서 걸었다고 왜 이러한 상황이 된 것이냐?
+   
+   두 가지 가능성을 떠올렸다.
+   
+   1. Redis 락과 트랜잭션 충돌
+      Redis 락을 획득하는 부분과 트랜잭션을 사용하는 부분이 충돌하면서, 특정 스레드가 락을 얻었지만 이후 트랜잭션 롤백이 발생하며 정상적인 예약 처리가 이루어지지 않았을 가능성이 크다.
+      Spring의 @Transactional 어노테이션을 사용하면 예외가 발생하면 자동으로 롤백되므로, Redis 락을 해제하기 전에 예외가 발생하면 락이 풀리지 않고 다른 스레드가 계속해서 대기한다.
+   
+   
+   2. 재시도 전략과 트랜잭션이 동시에 동작하면서 충돌
+      Lettuce 기반의 재시도 전략을 사용했지만, 트랜잭션 내부에서 락을 획득하면 롤백될 경우 락도 함께 해제될 수 있다.
+      그러나 Redis 락을 관리하는 코드가 트랜잭션 외부에 있다면, 롤백과는 별개로 락이 해제되지 않아서 Deadlock이 발생할 수 있다.
+   
+   우연히 레디스 락을 관리하는 코드는 다른 클래스로 따로 빼낸 상태에서 호출하는 형식이었다.
+   
+   결국, DB 트랜잭션과 Redis 락 간 문제가 발생했다고 보여지며,
+   Spring의 트랜잭션은 기본적으로 DB에 대한 롤백을 수행하지만, Redis 락은 별도의 외부시스템이므로
+   결과만을 롤백될 뿐, 레디스쪽에서 이에 대해 특별한 조치를 취하진 않는다.
+   
+   
+   그래서 롤백 로그만 뜰 뿐이며 결국 같은 조건 하에 db에 들어가는 값은 똑같은 경우가 있지 않냐는 궁금증이 생길만도 하다.
+   트랜잭셔널을 제거한 이후 시도한 결과도 ttl와 재시도 횟수, 재시도를 기다리는 시간에 의해 같은 결과는 내긴 했지만...
+   
+   여기선 발생하진 않았지만 이미 예매에 성공한 유저의 티켓까지 트랜잭셔널에 묶여서
+   로그상으로는 예매에 성공했으나, db에는 남지않는 결과를 예상할 수도 있다.
+   
+   이는 외부 시스템이 트랜잭션 커밋 후의 결과를 기반으로 동작한다면, 롤백이 발생할 경우 외부시스템과의 데이터 불일치가 발생할 수 있다는 뜻이다.
+   
+   ![Image](https://github.com/user-attachments/assets/8a9b7a00-46ea-405e-99d7-2663acf85ab6)
+   
+   마지막으로 성공한 사진을 올리며 마치겠다.
+   
+   </details>
 
 <details>
     <summary>Redisson</summary>
+      
+      상황: 선착순 티켓 예매
+      티켓 수 4개
+      스레드 8개 실행
+      원하는 결과: 4개까지 티켓 예매 후 나머지 예매 실패, 중복되지 않는 티켓 예매 등수
+
+<img width="851" alt="image" src="https://github.com/user-attachments/assets/de206bcc-94de-4535-86e1-350d3c83e628" />
+userId = 3 이 먼저 락 획득 성공</br>
+남은 티켓 수 감소 후 락 해제 </br>
+</br>
+<img width="200" alt="image" src="https://github.com/user-attachments/assets/d730b103-2eb7-49ee-ae09-a1bb3c5513e5" />
+
+나머지 user들도 순차적으로 락을 획득하고 실행</br>
+티켓 수가 0이 된 이후 user들은 예매 불가
+   ```
+   @Service
+   @Slf4j
+   @RequiredArgsConstructor
+   public class RedissonService {
+       private final RedissonClient redissonClient;
+       private final BookingService bookingService;
+   
+   
+       public BookingResponseDto executeWithLock(Long concertId, BookingRequestDto dto) {
+           String lockKey = "concert_lock_" + concertId;
+           RLock lock = redissonClient.getLock(lockKey);
+   
+           try {
+               log.info("락 획득 시도: userId = {}", dto.getUserId());
+               if (lock.tryLock(10, 3, TimeUnit.SECONDS)) {
+                   try {
+                       log.info("락 획득 성공: userId = {}", dto.getUserId());
+                       return bookingService.bookWithRedissonLock(concertId, dto);
+   
+                   } catch (Exception e) {
+                       RuntimeException noStackTraceException = new RuntimeException("예매 실패: " + e.getMessage());
+                       noStackTraceException.setStackTrace(new StackTraceElement[0]); // 스택 트레이스 제거
+                       throw noStackTraceException;
+                   } finally {
+                       if (lock.isHeldByCurrentThread()) {
+                           log.info("락 해제: userId = {}", dto.getUserId());
+                           lock.unlock();
+                       }
+                   }
+               } else {
+                   log.info("락 획득 실패: userId = {}", dto.getUserId());
+                   throw new RuntimeException("현재 이용자가 많아 대기 중입니다. 잠시 후 다시 시도하세요.");
+               }
+           } catch (InterruptedException e) {
+               throw new RuntimeException("예매 처리 중 오류 발생", e);
+           }
+       }
+   }
+   ```
+레튜스와 다르 게 락 획득 대기하는 코드를 직접 짤 필요없이</br>
+lock.tryLock(10, 3, TimeUnit.SECONDS) 이런 식으로 미리 구현된 인터페이스를 사용하면 된다.</br>
+<details>
+<summary>Lettuce는 락 획든 대기 코드를 직접 짜야한다. 보통 스핀 락으로</summary>
+      
+```
+@Slf4j
+@RequiredArgsConstructor
+@Service
+public class LettuceLockBookingService {
+    private final BookingService bookingService;
+    private final LockRedisRepository lockRedisRepository;
+
+    private static final long SPIN_INTERVAL_MS = 100;
+
+    public BookingResDto bookWithSpinLock(BookingReqDto bookingReqDto) {
+        String lockKey = generateLockKey(bookingReqDto.getConcertId());
+
+        while (!lockRedisRepository.acquireLock(lockKey, Duration.ofMillis(30000))) {
+            try {
+                Thread.sleep(SPIN_INTERVAL_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("예매 프로세스가 중단되었습니다.", e);
+            }
+        }
+
+        try {
+            BookingResDto result = bookingService.bookWithLettuceLock(bookingReqDto);
+            return result;
+        } catch (Exception e) {
+            log.error("예매 중 예외 발생: {}", e.getMessage(), e);
+            throw e;
+        } catch (Error e) {
+            log.error("예매 중 치명적 에러 발생: {}", e.getMessage(), e);
+            throw e;
+        } finally {
+            lockRedisRepository.releaseLock(lockKey);
+        }
+    }
+
+
+    private String generateLockKey(Long concertId) {
+        return "booking:lock:" + concertId;
+    }
+}
+ ```
+
+</details>
+redisson은 내부적으로 pub/sub 방식으로 구현되어 있다.</br>
+그리고 redisson은 watchdog이라는 모니터로 락을 물고 서버가 죽어도 락이 해제되게 하는 게 가능하다 (기본 30초 간격으로 확인). </br>
+그러나 보통 redisson이나 lettuce나 비즈니스 로직이 정상적으로 작동하는 시간을 고려하여 ttl을 설정할 수 있다. </br>
+
+| **비교 항목** | **Spin Lock** | **Pub/Sub 기반 락 (Redisson)** |
+| --- | --- | --- |
+| **CPU 사용량** | ❌ 높음 | ✅ 낮음 |
+| **네트워크 부하** | ❌ 많음 (계속 Redis 요청) | ✅ 적음 (락 해제 시 알림만 전송) |
+| **Redis 성능 영향** | ❌ 심함 (다중 요청) | ✅ 낮음 (Pub/Sub 이벤트만 전송) |
+
+</br>
+추가로 락을 적용할 때, 비즈니스 로직이 감싸져 있는 형태이기 때문에 </br>
+AOP를 사용할 수 있다.
+
+```
+@Aspect
+@Component
+@Slf4j
+@RequiredArgsConstructor
+@Order(0)
+public class RedissonLockAspect {
+
+    private final RedissonClient redissonClient;
+
+    @Around("@annotation(redissonLock)")
+    public Object around(ProceedingJoinPoint joinPoint, RedissonLock redissonLock) throws Throwable {
+        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+        Method method = signature.getMethod();
+        Object[] args = joinPoint.getArgs(); // 메서드의 실제 인자 값들
+        Parameter[] parameters = method.getParameters(); // 메서드의 매개변수 정보
+
+        // 락 키를 찾아 설정
+        String lockKey = null;
+        for (int i = 0; i < parameters.length; i++) {
+            if (parameters[i].isAnnotationPresent(RedissonLockParam.class)) {
+                lockKey = redissonLock.prefix() + args[i]; // prefix + 실제 파라미터 값
+                break;
+            }
+        }
+
+        if (lockKey == null) {
+            throw new IllegalArgumentException("RedissonLock이 선언된 메서드에는 @RedissonLockParam이 있는 파라미터가 필요합니다.");
+        }
+
+        long threadId = Thread.currentThread().getId();
+        RLock lock = redissonClient.getLock(lockKey);
+
+        try {
+            log.info("락 획득 시도: threadId = {}", threadId);
+            if (lock.tryLock(10, 3, TimeUnit.SECONDS)) {
+                try {
+                    log.info("락 획득 성공: threadId = {}", threadId);
+                    return joinPoint.proceed(); // 원래 메서드 실행
+                } finally {
+                    if (lock.isHeldByCurrentThread()) {
+                        log.info("락 해제: threadId = {}", threadId);
+                        lock.unlock();
+                    }
+                }
+            } else {
+                log.info("락 획득 실패: threadId = {}", threadId);
+                throw new RuntimeException("현재 이용자가 많아 대기 중입니다. 잠시 후 다시 시도하세요.");
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException("예매 처리 중 오류 발생", e);
+        }
+    }
+}
+```
+
+주의할점. 트랜잭션이 적용되는 범위 밖에서 먼저 실행되도록 설정해야 한다.
+
+왜냐, Transactional이 적용되는 범위가 끝날 때 commit이 되고 데이터베이스에 실제로 적용이 되기 때문에.
+위 코드에서는 @Order(0)을 이용해 @RedissonLock이 항상 가장 바깥에서 실행되도록 한다.
+
+@RedissonLock 사용 사례
+```
+@RedissonLock
+@Transactional
+public BookingResponseDto bookWithRedissonLock(@RedissonLockParam Long concertId, BookingRequestDto bookingReqDto) {
+    Concert concert = concertRepository.findById(concertId)
+            .orElseThrow(() -> new IllegalArgumentException("Concert not found"));
+
+    concert.decreaseRemainTicketAmount();
+
+    Booking booking = Booking.builder()
+            .concert(concert)
+            .userId(bookingReqDto.getUserId())
+            .build();
+
+    Booking savedBooking = bookingRepository.save(booking);
+
+    return BookingResponseDto.builder()
+            .concertId(savedBooking.getConcert().getId())
+            .bookingOrder(savedBooking.getBookingOrder())
+            .build();
+	}
+}
+```
+
+1000개도 문제 없이 작동한다
+<img width="851" alt="image" src="https://github.com/user-attachments/assets/f837c7ca-efac-45a6-9526-d31f06034429" />
+<img width="847" alt="image" src="https://github.com/user-attachments/assets/dd39a0f5-3409-4221-8b4a-a84e8fec80b6" />
+
+<details>
+<summary>동기화로 작동하다 보니 요청 수가 많아질수록 모든 요청이 완료되는 걸 기다리기 까지 오래 걸린다.</summary>
+하지만 먼저 완료된 요청은 먼저 나가서 선착순 티겟팅의 특성상 큰 문제가 발생할 것 같진 않다. 그래도 이미 티켓 수가 남지않았는데 락 획득을 기다리는 것이 충분히 비효율적인 상황이라면 배치단위로 받아서 끊어내는 방법이 있을 것 같기도 하다.
+
+</details>
+
+비교 </br>
+1000개 요청
+<img width="844" alt="image" src="https://github.com/user-attachments/assets/559eaf25-5efe-4666-8584-5335d79c37be" />
+10개 요청
+<img width="847" alt="image" src="https://github.com/user-attachments/assets/67ce81c8-110f-46d9-847d-92039ebcf696" />
 
 </details>
     
