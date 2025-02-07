@@ -43,15 +43,16 @@
 
 1. synchronized 적용 전
 
+```
+@Trancsaction
+public BookingResponseDto bookTicket(Long concertId, BookingRequestDto dto) {
+    Concert concert = concertRepository.findById(concertId)
+            .orElseThrow(() -> new IllegalArgumentException("Concert not found"));
 
-    @Trancsaction
-    public BookingResponseDto bookTicket(Long concertId, BookingRequestDto dto) {
-        Concert concert = concertRepository.findById(concertId)
-                .orElseThrow(() -> new IllegalArgumentException("Concert not found"));
-
-        concert.decreaseRemainTicketAmount();
-        ...
-    }
+    concert.decreaseRemainTicketAmount();
+    ...
+}
+```
 
 ![Image](https://github.com/user-attachments/assets/8258caa2-d953-4cea-beaf-50e00a1f6c27)
 ![Image](https://github.com/user-attachments/assets/9c837162-1c51-46fc-a5ca-494ebd74b9af)
@@ -64,15 +65,16 @@
 
     - 티켓이 공유 자원이기 때문에 티켓을 조회하고 수정하는 bookTicket 메소드를 임계 영역으로 설정
 
+```
+@Trancsaction
+public synchronized BookingResponseDto bookTicket(Long concertId, BookingRequestDto dto) {
+    Concert concert = concertRepository.findById(concertId)
+            .orElseThrow(() -> new IllegalArgumentException("Concert not found"));
 
-    @Trancsaction
-    public synchronized BookingResponseDto bookTicket(Long concertId, BookingRequestDto dto) {
-        Concert concert = concertRepository.findById(concertId)
-                .orElseThrow(() -> new IllegalArgumentException("Concert not found"));
-
-        concert.decreaseRemainTicketAmount();
-        ...
-    }
+    concert.decreaseRemainTicketAmount();
+    ...
+}
+```
 
 ![Image](https://github.com/user-attachments/assets/922c61e3-b151-43ac-9a49-911f48c4d8f9)
 ![Image](https://github.com/user-attachments/assets/79ad1540-9df7-4bb8-ac37-340dd89f759d)
@@ -96,15 +98,16 @@
 
     - 티켓 수량이 줄어드는 것을 Dirty Checking으로 했기 때문에 save() 메소드 호출로 직접 저장
 
+```
+public synchronized BookingResponseDto bookTicket(Long concertId, BookingRequestDto dto) {
+    Concert concert = concertRepository.findById(concertId)
+            .orElseThrow(() -> new IllegalArgumentException("Concert not found"));
 
-    public synchronized BookingResponseDto bookTicket(Long concertId, BookingRequestDto dto) {
-        Concert concert = concertRepository.findById(concertId)
-                .orElseThrow(() -> new IllegalArgumentException("Concert not found"));
-    
-        concert.decreaseRemainTicketAmount();
-        concertRepository.save(concert);
-        ...
-    }
+    concert.decreaseRemainTicketAmount();
+    concertRepository.save(concert);
+    ...
+}
+```
 
 ![Image](https://github.com/user-attachments/assets/5e99a5d7-4070-41a4-90a2-90ebe9c4c558)
 ![Image](https://github.com/user-attachments/assets/1827ce5a-c284-4960-85c2-6e52c46bc3fb)
@@ -124,46 +127,50 @@
 
    - 외부 서비스에 synchronized를 적용 후, @Transactional이 선언된 메소드를 호출한다면 프록시 객체를 각각 호출하게 되어 동시성과 JPA의 이점 모두 얻을 수 있을 것 같았다.
 
+```
+@Service
+@RequiredArgsConstructor
+public class BookingSynchronizedService {
 
-    @Service
-    @RequiredArgsConstructor
-    public class BookingSynchronizedService {
-
-        private final BookingService bookingService;
+    private final BookingService bookingService;
 
     public synchronized void synchronizedBookTicket(Long concertId, BookingRequestDto dto) {
         bookingService.bookTicket(concertId, dto);
     }
+}
+```
 
 <br>
 
-    @Service
-    @RequiredArgsConstructor
-    public class BookingService {
+```
+@Service
+@RequiredArgsConstructor
+public class BookingService {
 
-        private final BookingRepository bookingRepository;
-        private final ConcertRepository concertRepository;
+    private final BookingRepository bookingRepository;
+    private final ConcertRepository concertRepository;
 
-        @Transactional
-        public BookingResponseDto bookTicket(Long concertId, BookingRequestDto dto) {
-            Concert concert = concertRepository.findById(concertId)
-                    .orElseThrow(() -> new IllegalArgumentException("Concert not found"));
-    
-            concert.decreaseRemainTicketAmount();
-    
-            Booking booking = Booking.builder()
-                    .concert(concert)
-                    .userId(dto.getUserId())
-                    .build();
-    
-            Booking savedBooking = bookingRepository.save(booking);
-    
-            return BookingResponseDto.builder()
-                    .concertId(savedBooking.getConcert().getId())
-                    .bookingOrder(savedBooking.getBookingOrder())
-                    .build();
-        }
+    @Transactional
+    public BookingResponseDto bookTicket(Long concertId, BookingRequestDto dto) {
+        Concert concert = concertRepository.findById(concertId)
+                .orElseThrow(() -> new IllegalArgumentException("Concert not found"));
+
+        concert.decreaseRemainTicketAmount();
+
+        Booking booking = Booking.builder()
+                .concert(concert)
+                .userId(dto.getUserId())
+                .build();
+
+        Booking savedBooking = bookingRepository.save(booking);
+
+        return BookingResponseDto.builder()
+                .concertId(savedBooking.getConcert().getId())
+                .bookingOrder(savedBooking.getBookingOrder())
+                .build();
     }
+}
+```
 
 ![Image](https://github.com/user-attachments/assets/5dc8e994-b2bf-4c66-8f42-6710691c2f36)
 ![Image](https://github.com/user-attachments/assets/b5acf8fb-f7ab-46c5-97f1-2c5bdab1d4aa)
@@ -173,37 +180,39 @@ synchronized와 @Transactional을 함께 사용해도 동시성이 보장되는 
 그래서 userId가 64번인 경우에는 예외를 던지도록 설정하여 롤백이 제대로 일어나는지 확인을 하려고 한다.
 롤백이 제대로 일어난다면 테스트는 실패해야하고, DB에 남은 티켓은 1장이어야하며, 예약 확인 테이블에 userId가 64인 row는 없어야 한다.
 
-    @Service
-    @RequiredArgsConstructor
-    public class BookingService {
+```
+@Service
+@RequiredArgsConstructor
+public class BookingService {
 
-        private final BookingRepository bookingRepository;
-        private final ConcertRepository concertRepository;
-    
-        @Transactional
-        public BookingResponseDto bookTicket(Long concertId, BookingRequestDto dto) {
-            Concert concert = concertRepository.findById(concertId)
-                    .orElseThrow(() -> new IllegalArgumentException("Concert not found"));
-    
-            concert.decreaseRemainTicketAmount();
-    
-            Booking booking = Booking.builder()
-                    .concert(concert)
-                    .userId(dto.getUserId())
-                    .build();
-    
-            Booking savedBooking = bookingRepository.save(booking);
-            
-            if (dto.getUserId() == 64) {
-                throw new RuntimeException("RuntimeException CheckPoint");
-            }
-    
-            return BookingResponseDto.builder()
-                    .concertId(savedBooking.getConcert().getId())
-                    .bookingOrder(savedBooking.getBookingOrder())
-                    .build();
+    private final BookingRepository bookingRepository;
+    private final ConcertRepository concertRepository;
+
+    @Transactional
+    public BookingResponseDto bookTicket(Long concertId, BookingRequestDto dto) {
+        Concert concert = concertRepository.findById(concertId)
+                .orElseThrow(() -> new IllegalArgumentException("Concert not found"));
+
+        concert.decreaseRemainTicketAmount();
+
+        Booking booking = Booking.builder()
+                .concert(concert)
+                .userId(dto.getUserId())
+                .build();
+
+        Booking savedBooking = bookingRepository.save(booking);
+        
+        if (dto.getUserId() == 64) {
+            throw new RuntimeException("RuntimeException CheckPoint");
         }
+
+        return BookingResponseDto.builder()
+                .concertId(savedBooking.getConcert().getId())
+                .bookingOrder(savedBooking.getBookingOrder())
+                .build();
     }
+}
+```
 
 ![Image](https://github.com/user-attachments/assets/f1247696-e29f-414e-8b4b-c8be34645c2a)
 ![Image](https://github.com/user-attachments/assets/c666f8b2-1726-4c25-ac68-4887a1f360d8)
