@@ -250,7 +250,7 @@ Lock을 걸지 않으면 발생하는 동시성 문제.
 또 주의할 것은, 롤백은 테이블 행과 레코드를 모두 포함할 수 있는 현재의 보류 중인 변경 사항을 모두 되돌려야 하므로 DB 시스템 비용이 많이 들 수 있다.</br>
 
 
-- 낙관적 락에서의 교착상태(Dead-Lock) 발생
+- 낙관적 락에서의 교착상태(Dead-Lock) 발생 </br>
 낙관적 락(Optimistic Lock)은 분명 명시적으로 DB의 Lock을 사용하지 않고, 버전 관리 기능을 사용한다. 이때 Lost Update문제는 해결 될 수 있으나 데드락이 발생할 수 있다.</br>
 그렇다는 것은 Lock을 사용하고 있다는 뜻인데, 낙관적 락(DB Lock 사용 x)을 사용했을 뿐 명시적으로 DB Lock을 사용하지 않았다. 근데 왜 Lock이 사용됐을까?</br>
 
@@ -353,6 +353,9 @@ Redis 등 DB 밖에서 락을 걸 수 있는 기술을 사용할 수 있다.
 
 <details>
 <summary>Redis</summary>
+
+<details>
+<summary>Lettuce</summary>
 Redis 레벨에서 lettues를 사용하여 동시성 문제를 해결하고자 하고자 했다.
 구현방법, 동시성 제어 방법 적용 전/후 결과, 해당 내용이 가질 수 있는 문제점 등에 대해 다룹니다.
 
@@ -435,4 +438,11 @@ Spring의 트랜잭션은 기본적으로 DB에 대한 롤백을 수행하지만
 
 </details>
 
+
+<details>
+    <summary>Redisson</summary>
+
+</details>
+    
+</details>
 
