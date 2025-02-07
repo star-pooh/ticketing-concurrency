@@ -174,7 +174,6 @@ public class BookingService {
 
 ![Image](https://github.com/user-attachments/assets/5dc8e994-b2bf-4c66-8f42-6710691c2f36)
 ![Image](https://github.com/user-attachments/assets/b5acf8fb-f7ab-46c5-97f1-2c5bdab1d4aa)
-![Image](https://github.com/user-attachments/assets/3a7eb325-aafb-436c-b0af-9af96b00537d)
 
 synchronized와 @Transactional을 함께 사용해도 동시성이 보장되는 것을 확인하였다. 그런데 @Transactional이 제대로 적용되었는지 확인하고 싶었다. 
 그래서 userId가 64번인 경우에는 예외를 던지도록 설정하여 롤백이 제대로 일어나는지 확인을 하려고 한다.
@@ -214,6 +213,7 @@ public class BookingService {
 }
 ```
 
+![Image](https://github.com/user-attachments/assets/3a7eb325-aafb-436c-b0af-9af96b00537d)
 ![Image](https://github.com/user-attachments/assets/f1247696-e29f-414e-8b4b-c8be34645c2a)
 ![Image](https://github.com/user-attachments/assets/c666f8b2-1726-4c25-ac68-4887a1f360d8)
 
@@ -235,7 +235,7 @@ public class BookingService {
 
 
 <details>
-<summary>DB-Lock</summary>
+<summary>DB</summary>
   
 <img width="1327" alt="동시성 문제 발생" src="https://github.com/user-attachments/assets/5d452b27-2a91-4b61-87fb-12dfe5c975a9" />
 
