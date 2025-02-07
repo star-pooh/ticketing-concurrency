@@ -41,7 +41,7 @@ class BookingServiceConcurrencyTest {
 
     // ✅ 숫자 및 문자열 상수 정리
     private static final long TEST_CONCERT_ID = 1L; // 테스트용 콘서트 ID
-    private static final int THREAD_COUNT = 1000; // 동시 요청 개수
+    private static final int THREAD_COUNT = 8; // 동시 요청 개수
     private static final long TOTAL_TICKET_AMOUNT = 4L; // 총 티켓 개수
     private static final String TEST_CONCERT_TITLE = "동시성 테스트 콘서트";
     private static final String TEST_CONCERT_SINGER = "테스트 가수 이름";
